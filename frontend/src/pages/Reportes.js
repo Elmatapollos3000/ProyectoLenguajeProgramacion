@@ -3,7 +3,6 @@ import Layout from "../components/Layout";
 import Card from "../components/Card";
 import Tabla from "../components/Tabla";
 import api from "../services/api";
-import { useRef } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
