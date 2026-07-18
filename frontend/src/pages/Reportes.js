@@ -46,7 +46,6 @@ export default function Reportes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   //pdf
-  const contenidoRef = useRef(null);
   const [generandoPDF, setGenerandoPDF] = useState(false);
 
   const descargarPDF = () => {
