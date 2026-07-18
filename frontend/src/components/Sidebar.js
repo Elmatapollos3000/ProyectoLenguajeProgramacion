@@ -63,7 +63,7 @@ export default function Sidebar() {
       {/* Logo / nombre sistema */}
       <div className="text-center py-4 border-bottom border-secondary">
         <img
-          src="/logo.png"
+          src="https://th.bing.com/th/id/R.1534e7a43eb69fa7220ab38ed336d67b?rik=MIk3ck%2bvHcm89Q&pid=ImgRaw&r=0"
           alt="KFC"
           style={{ height: "44px", objectFit: "contain" }}
           onError={(e) => {
