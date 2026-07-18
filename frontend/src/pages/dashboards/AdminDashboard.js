@@ -5,6 +5,15 @@ import Card from "../../components/Card";
 import Tabla from "../../components/Tabla";
 import api from "../../services/api";
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
 const COLUMNAS_LOTES_CRITICOS = [
   { label: "Insumo", key: "nombre" },
   { label: "Cantidad", key: "cantidad_actual" },
@@ -153,6 +162,74 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Gráfico: distribución de lotes por estado */}
+      <div className="row g-4 mt-1">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom py-2">
+              <span className="fw-semibold small">
+                <i className="bi bi-pie-chart text-primary me-2" />
+                Distribución de lotes por estado
+              </span>
+            </div>
+            <div className="card-body">
+              {cargando ? (
+                <div className="text-center py-4">
+                  <div
+                    className="spinner-border spinner-border-sm text-danger"
+                    role="status"
+                  />
+                </div>
+              ) : !resumen || resumen.total_lotes === 0 ? (
+                <p className="text-muted small mb-0 text-center py-4">
+                  Sin lotes registrados.
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        {
+                          name: "Activos",
+                          value: resumen.activos ?? 0,
+                          color: "#198754",
+                        },
+                        {
+                          name: "Vencidos",
+                          value: resumen.vencidos ?? 0,
+                          color: "#dc3545",
+                        },
+                        {
+                          name: "Consumidos",
+                          value: resumen.consumidos ?? 0,
+                          color: "#6c757d",
+                        },
+                      ]}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {[
+                        { color: "#198754" },
+                        { color: "#dc3545" },
+                        { color: "#6c757d" },
+                      ].map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Tablas y accesos rápidos */}
       <div className="row g-4">

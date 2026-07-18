@@ -5,6 +5,15 @@ import Card from "../../components/Card";
 import Tabla from "../../components/Tabla";
 import api from "../../services/api";
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
 const COLUMNAS_AUDITORIA = [
   {
     label: "Tabla",
@@ -91,6 +100,13 @@ const COLUMNAS_MOVIMIENTOS = [
   },
 ];
 
+const COLOR_ACCION = {
+  INSERT: "#198754",
+  UPDATE: "#ffc107",
+  DELETE: "#dc3545",
+  LOGIN: "#0d6efd",
+};
+
 export default function AuditorDashboard() {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
@@ -99,6 +115,7 @@ export default function AuditorDashboard() {
   const [movimientos, setMovimientos] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [conteoAccion, setConteoAccion] = useState([]);
 
   const cargarDatos = async () => {
     setCargando(true);
@@ -109,6 +126,14 @@ export default function AuditorDashboard() {
         api.get("/reportes"),
       ]);
       setAuditoria(resAud.data.slice(0, 8));
+      // Conteo de eventos por tipo de acción (sobre el total, no solo los últimos 8)
+      const conteo = {};
+      resAud.data.forEach((a) => {
+        conteo[a.accion] = (conteo[a.accion] || 0) + 1;
+      });
+      setConteoAccion(
+        Object.entries(conteo).map(([accion, total]) => ({ accion, total })),
+      );
       setMovimientos(resMov.data.filter((m) => m.tipo === "merma").slice(0, 6));
       setResumen(resRep.data);
     } catch {
@@ -177,7 +202,58 @@ export default function AuditorDashboard() {
         </div>
       )}
 
-      <div className="row g-4">
+      {/* Gráfico: eventos por tipo de acción */}
+      <div className="row g-4 mt-1">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom py-2">
+              <span className="fw-semibold small">
+                <i className="bi bi-pie-chart text-primary me-2" />
+                Eventos por tipo de acción
+              </span>
+            </div>
+            <div className="card-body">
+              {cargando ? (
+                <div className="text-center py-4">
+                  <div
+                    className="spinner-border spinner-border-sm text-danger"
+                    role="status"
+                  />
+                </div>
+              ) : conteoAccion.length === 0 ? (
+                <p className="text-muted small mb-0 text-center py-4">
+                  Sin eventos de auditoría.
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={conteoAccion}
+                      dataKey="total"
+                      nameKey="accion"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ accion, total }) => `${accion}: ${total}`}
+                    >
+                      {conteoAccion.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={COLOR_ACCION[entry.accion] ?? "#6c757d"}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row g-4 mt-4">
         {/* Últimos eventos de auditoría */}
         <div className="col-12 col-lg-7">
           <div className="card border-0 shadow-sm">

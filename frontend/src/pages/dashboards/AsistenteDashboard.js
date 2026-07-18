@@ -5,6 +5,17 @@ import Card from "../../components/Card";
 import Tabla from "../../components/Tabla";
 import api from "../../services/api";
 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  LabelList,
+} from "recharts";
+
 const COLUMNAS_LOTES = [
   { label: "Insumo", key: "nombre" },
   { label: "Cantidad", key: "cantidad_actual" },
@@ -75,6 +86,14 @@ const COLUMNAS_MOVIMIENTOS = [
   },
 ];
 
+const COLOR_TIPO = {
+  ingreso: "#0d6efd",
+  salida: "#6c757d",
+  merma: "#dc3545",
+  apertura: "#0dcaf0",
+  preparacion: "#ffc107",
+};
+
 export default function AsistenteDashboard() {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
@@ -83,18 +102,21 @@ export default function AsistenteDashboard() {
   const [lotes, setLotes] = useState([]);
   const [movimientos, setMovimientos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [movPorTipo, setMovPorTipo] = useState([]);
 
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [resRep, resLotes, resMov] = await Promise.all([
+      const [resRep, resLotes, resMov, resMovTipo] = await Promise.all([
         api.get("/reportes"),
         api.get("/lotes"),
         api.get("/movimientos"),
+        api.get("/reportes/movimientos"),
       ]);
       setResumen(resRep.data);
       setLotes(resLotes.data.filter((l) => l.estado === "activo").slice(0, 8));
       setMovimientos(resMov.data.slice(0, 8));
+      setMovPorTipo(resMovTipo.data);
     } catch {
       console.error("Error al cargar dashboard asistente");
     } finally {
@@ -159,7 +181,72 @@ export default function AsistenteDashboard() {
         </div>
       )}
 
-      <div className="row g-4">
+      {/* Gráfico: movimientos por tipo */}
+      <div className="row g-4 mt-1">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom py-2">
+              <span className="fw-semibold small">
+                <i className="bi bi-bar-chart text-primary me-2" />
+                Movimientos por tipo
+              </span>
+            </div>
+            <div className="card-body">
+              {cargando ? (
+                <div className="text-center py-4">
+                  <div
+                    className="spinner-border spinner-border-sm text-danger"
+                    role="status"
+                  />
+                </div>
+              ) : movPorTipo.length === 0 ? (
+                <p className="text-muted small mb-0 text-center py-4">
+                  Sin movimientos registrados.
+                </p>
+              ) : (
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(movPorTipo.length * 60, 200)}
+                >
+                  <BarChart
+                    data={movPorTipo}
+                    layout="vertical"
+                    margin={{ top: 10, right: 50, left: 10, bottom: 10 }}
+                  >
+                    <XAxis type="number" allowDecimals={false} hide />
+                    <YAxis
+                      type="category"
+                      dataKey="tipo"
+                      width={110}
+                      tick={{ fontSize: 14 }}
+                    />
+                    <Tooltip formatter={(value) => [value, "Registros"]} />
+                    <Bar
+                      dataKey="total_registros"
+                      radius={[0, 6, 6, 0]}
+                      barSize={32}
+                    >
+                      {movPorTipo.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={COLOR_TIPO[entry.tipo] ?? "#6c757d"}
+                        />
+                      ))}
+                      <LabelList
+                        dataKey="total_registros"
+                        position="right"
+                        style={{ fontSize: 14, fontWeight: 600 }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row g-4 mt-4">
         {/* Lotes activos recientes */}
         <div className="col-12 col-lg-7">
           <div className="card border-0 shadow-sm">
