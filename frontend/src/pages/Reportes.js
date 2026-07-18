@@ -3,6 +3,9 @@ import Layout from "../components/Layout";
 import Card from "../components/Card";
 import Tabla from "../components/Tabla";
 import api from "../services/api";
+import { useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const COLUMNAS_MERMAS = [
   { label: "Insumo", key: "nombre" },
@@ -42,6 +45,52 @@ export default function Reportes() {
   const [movimientos, setMovimientos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  //pdf
+  const contenidoRef = useRef(null);
+  const [generandoPDF, setGenerandoPDF] = useState(false);
+
+  const descargarPDF = async () => {
+    if (!contenidoRef.current) return;
+    setGenerandoPDF(true);
+    try {
+      const canvas = await html2canvas(contenidoRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const anchoPagina = pdf.internal.pageSize.getWidth();
+      const altoPagina = pdf.internal.pageSize.getHeight();
+      const anchoImagen = anchoPagina;
+      const altoImagen = (canvas.height * anchoImagen) / canvas.width;
+
+      let alturaRestante = altoImagen;
+      let posicionY = 0;
+
+      // Primera página
+      pdf.addImage(imgData, "PNG", 0, posicionY, anchoImagen, altoImagen);
+      alturaRestante -= altoPagina;
+
+      // Páginas adicionales si el contenido no cabe en una sola
+      while (alturaRestante > 0) {
+        posicionY = alturaRestante - altoImagen;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, posicionY, anchoImagen, altoImagen);
+        alturaRestante -= altoPagina;
+      }
+
+      const fecha = new Date().toLocaleDateString("es-PE").replace(/\//g, "-");
+      pdf.save(`Reporte_Inventario_KFC_${fecha}.pdf`);
+    } catch (err) {
+      console.error("Error al generar el PDF:", err);
+      setError("No se pudo generar el PDF. Intenta de nuevo.");
+    } finally {
+      setGenerandoPDF(false);
+    }
+  };
 
   // ── Cargar todos los reportes en paralelo ────────────────
   const cargarReportes = async () => {
@@ -77,14 +126,26 @@ export default function Reportes() {
             Resumen general del inventario
           </p>
         </div>
-        <button
-          className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
-          onClick={cargarReportes}
-          disabled={cargando}
-        >
-          <i className={`bi bi-arrow-clockwise ${cargando ? "spin" : ""}`} />
-          Actualizar
-        </button>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
+            onClick={cargarReportes}
+            disabled={cargando}
+          >
+            <i className={`bi bi-arrow-clockwise ${cargando ? "spin" : ""}`} />
+            Actualizar
+          </button>
+          <button
+            className="btn btn-danger btn-sm d-flex align-items-center gap-2"
+            onClick={descargarPDF}
+            disabled={cargando || generandoPDF}
+          >
+            <i
+              className={`bi ${generandoPDF ? "bi-hourglass-split" : "bi-file-earmark-pdf"}`}
+            />
+            {generandoPDF ? "Generando..." : "Descargar PDF"}
+          </button>
+        </div>
       </div>
 
       {/* Error */}
@@ -103,111 +164,113 @@ export default function Reportes() {
       )}
 
       {/* ── Sección 1: Cards de resumen ── */}
-      <p
-        className="fw-semibold text-muted small text-uppercase mb-2"
-        style={{ letterSpacing: ".05em" }}
-      >
-        Resumen de lotes
-      </p>
-      {cargando ? (
-        <div className="text-center py-4">
-          <div className="spinner-border text-danger" role="status" />
-        </div>
-      ) : (
-        <div className="row g-3 mb-4">
-          <div className="col-6 col-md-4 col-xl-2">
-            <Card
-              titulo="Total lotes"
-              valor={resumen?.total_lotes ?? 0}
-              icono="bi bi-layers"
-              variante="primary"
-            />
+      <div ref={contenidoRef} className="bg-white p-2">
+        <p
+          className="fw-semibold text-muted small text-uppercase mb-2"
+          style={{ letterSpacing: ".05em" }}
+        >
+          Resumen de lotes
+        </p>
+        {cargando ? (
+          <div className="text-center py-4">
+            <div className="spinner-border text-danger" role="status" />
           </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <Card
-              titulo="Activos"
-              valor={resumen?.activos ?? 0}
-              icono="bi bi-check-circle"
-              variante="success"
-            />
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <Card
-              titulo="Vencidos"
-              valor={resumen?.vencidos ?? 0}
-              icono="bi bi-x-circle"
-              variante="danger"
-            />
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <Card
-              titulo="Consumidos"
-              valor={resumen?.consumidos ?? 0}
-              icono="bi bi-archive"
-              variante="secondary"
-            />
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <Card
-              titulo="Stock total"
-              valor={resumen?.stock_total ?? 0}
-              icono="bi bi-box-seam"
-              variante="primary"
-              subtitulo="unidades"
-            />
-          </div>
-          <div className="col-6 col-md-4 col-xl-2">
-            <Card
-              titulo="Próx. a vencer"
-              valor={resumen?.proximos_a_vencer ?? 0}
-              icono="bi bi-clock-history"
-              variante="warning"
-              subtitulo="en 3 días"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ── Sección 2: Mermas por insumo + Movimientos ── */}
-      <div className="row g-4">
-        {/* Mermas */}
-        <div className="col-12 col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
-              <span className="fw-semibold small">
-                <i className="bi bi-exclamation-triangle text-danger me-2" />
-                Mermas por insumo
-              </span>
-              <span className="badge bg-secondary">{mermas.length}</span>
+        ) : (
+          <div className="row g-3 mb-4">
+            <div className="col-6 col-md-4 col-xl-2">
+              <Card
+                titulo="Total lotes"
+                valor={resumen?.total_lotes ?? 0}
+                icono="bi bi-layers"
+                variante="primary"
+              />
             </div>
-            <div className="card-body p-0">
-              <Tabla
-                columnas={COLUMNAS_MERMAS}
-                datos={mermas}
-                cargando={cargando}
-                mensajeVacio="No hay mermas registradas."
+            <div className="col-6 col-md-4 col-xl-2">
+              <Card
+                titulo="Activos"
+                valor={resumen?.activos ?? 0}
+                icono="bi bi-check-circle"
+                variante="success"
+              />
+            </div>
+            <div className="col-6 col-md-4 col-xl-2">
+              <Card
+                titulo="Vencidos"
+                valor={resumen?.vencidos ?? 0}
+                icono="bi bi-x-circle"
+                variante="danger"
+              />
+            </div>
+            <div className="col-6 col-md-4 col-xl-2">
+              <Card
+                titulo="Consumidos"
+                valor={resumen?.consumidos ?? 0}
+                icono="bi bi-archive"
+                variante="secondary"
+              />
+            </div>
+            <div className="col-6 col-md-4 col-xl-2">
+              <Card
+                titulo="Stock total"
+                valor={resumen?.stock_total ?? 0}
+                icono="bi bi-box-seam"
+                variante="primary"
+                subtitulo="unidades"
+              />
+            </div>
+            <div className="col-6 col-md-4 col-xl-2">
+              <Card
+                titulo="Próx. a vencer"
+                valor={resumen?.proximos_a_vencer ?? 0}
+                icono="bi bi-clock-history"
+                variante="warning"
+                subtitulo="en 3 días"
               />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Movimientos por tipo */}
-        <div className="col-12 col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
-            <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
-              <span className="fw-semibold small">
-                <i className="bi bi-arrow-left-right text-primary me-2" />
-                Movimientos por tipo
-              </span>
-              <span className="badge bg-secondary">{movimientos.length}</span>
+        {/* ── Sección 2: Mermas por insumo + Movimientos ── */}
+        <div className="row g-4">
+          {/* Mermas */}
+          <div className="col-12 col-lg-6">
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
+                <span className="fw-semibold small">
+                  <i className="bi bi-exclamation-triangle text-danger me-2" />
+                  Mermas por insumo
+                </span>
+                <span className="badge bg-secondary">{mermas.length}</span>
+              </div>
+              <div className="card-body p-0">
+                <Tabla
+                  columnas={COLUMNAS_MERMAS}
+                  datos={mermas}
+                  cargando={cargando}
+                  mensajeVacio="No hay mermas registradas."
+                />
+              </div>
             </div>
-            <div className="card-body p-0">
-              <Tabla
-                columnas={COLUMNAS_MOVIMIENTOS}
-                datos={movimientos}
-                cargando={cargando}
-                mensajeVacio="No hay movimientos registrados."
-              />
+          </div>
+
+          {/* Movimientos por tipo */}
+          <div className="col-12 col-lg-6">
+            <div className="card border-0 shadow-sm h-100">
+              <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
+                <span className="fw-semibold small">
+                  <i className="bi bi-arrow-left-right text-primary me-2" />
+                  Movimientos por tipo
+                </span>
+                <span className="badge bg-secondary">{movimientos.length}</span>
+              </div>
+              <div className="card-body p-0">
+                <Tabla
+                  columnas={COLUMNAS_MOVIMIENTOS}
+                  datos={movimientos}
+                  cargando={cargando}
+                  mensajeVacio="No hay movimientos registrados."
+                />
+              </div>
             </div>
           </div>
         </div>

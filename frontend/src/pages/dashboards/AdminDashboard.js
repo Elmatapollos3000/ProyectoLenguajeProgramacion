@@ -232,7 +232,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tablas y accesos rápidos */}
-      <div className="row g-4">
+      <div className="row g-4 mt-4">
         {/* Lotes críticos */}
         <div className="col-12 col-lg-7">
           <div className="card border-0 shadow-sm h-100">
