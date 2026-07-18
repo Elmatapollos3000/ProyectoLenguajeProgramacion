@@ -10,8 +10,6 @@ app.use(bodyParser.json());
 // ======================================
 // CONEXIÓN A LA BASE DE DATOS
 // ======================================
-const fs = require("fs");
-
 const conexion = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -20,7 +18,7 @@ const conexion = mysql.createConnection({
   port: process.env.DB_PORT,
   ssl: {
     rejectUnauthorized: true,
-    ca: fs.readFileSync("./ca.pem"),
+    ca: process.env.DB_SSL_CERT,
   },
 });
 
