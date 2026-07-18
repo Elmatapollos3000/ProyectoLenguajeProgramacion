@@ -218,65 +218,6 @@ export default function CocineroDashboard() {
             </div>
           </div>
 
-          {/* Gráfico: insumos próximos a vencer */}
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-bottom py-2">
-              <span className="fw-semibold small">
-                <i className="bi bi-clock-history text-warning me-2" />
-                Insumos próximos a vencer
-              </span>
-            </div>
-            <div className="card-body">
-              {cargando ? (
-                <div className="text-center py-3">
-                  <div
-                    className="spinner-border spinner-border-sm text-danger"
-                    role="status"
-                  />
-                </div>
-              ) : dataVencimiento.length === 0 ? (
-                <p className="text-muted small mb-0 text-center py-3">
-                  No hay insumos próximos a vencer.
-                </p>
-              ) : (
-                <ResponsiveContainer
-                  width="100%"
-                  height={Math.max(dataVencimiento.length * 40, 120)}
-                >
-                  <BarChart
-                    data={dataVencimiento}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                  >
-                    <XAxis type="number" allowDecimals={false} hide />
-                    <YAxis
-                      type="category"
-                      dataKey="nombre"
-                      width={90}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <Tooltip
-                      formatter={(value, _name, props) => [
-                        props.payload.etiqueta,
-                        "Vence en",
-                      ]}
-                    />
-                    <Bar dataKey="dias" radius={[0, 4, 4, 0]} barSize={18}>
-                      {dataVencimiento.map((entry, index) => (
-                        <Cell key={index} fill={colorPorUrgencia(entry.dias)} />
-                      ))}
-                      <LabelList
-                        dataKey="etiqueta"
-                        position="right"
-                        style={{ fontSize: 11 }}
-                      />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
           {/* Acción principal */}
           <div className="card border-0 shadow-sm">
             <div className="card-body d-flex flex-column gap-2">
@@ -294,6 +235,68 @@ export default function CocineroDashboard() {
                 <i className="bi bi-layers" />
                 Ver lotes disponibles
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Gráfico: insumos próximos a vencer — fila de ancho completo */}
+      <div className="row g-4 mt-1">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom py-2">
+              <span className="fw-semibold small">
+                <i className="bi bi-clock-history text-warning me-2" />
+                Insumos próximos a vencer
+              </span>
+            </div>
+            <div className="card-body">
+              {cargando ? (
+                <div className="text-center py-4">
+                  <div
+                    className="spinner-border spinner-border-sm text-danger"
+                    role="status"
+                  />
+                </div>
+              ) : dataVencimiento.length === 0 ? (
+                <p className="text-muted small mb-0 text-center py-4">
+                  No hay insumos próximos a vencer.
+                </p>
+              ) : (
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(dataVencimiento.length * 60, 200)}
+                >
+                  <BarChart
+                    data={dataVencimiento}
+                    layout="vertical"
+                    margin={{ top: 10, right: 50, left: 10, bottom: 10 }}
+                  >
+                    <XAxis type="number" allowDecimals={false} hide />
+                    <YAxis
+                      type="category"
+                      dataKey="nombre"
+                      width={130}
+                      tick={{ fontSize: 14 }}
+                    />
+                    <Tooltip
+                      formatter={(value, _name, props) => [
+                        props.payload.etiqueta,
+                        "Vence en",
+                      ]}
+                    />
+                    <Bar dataKey="dias" radius={[0, 6, 6, 0]} barSize={32}>
+                      {dataVencimiento.map((entry, index) => (
+                        <Cell key={index} fill={colorPorUrgencia(entry.dias)} />
+                      ))}
+                      <LabelList
+                        dataKey="etiqueta"
+                        position="right"
+                        style={{ fontSize: 14, fontWeight: 600 }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>
