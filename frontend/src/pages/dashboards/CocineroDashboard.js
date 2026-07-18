@@ -172,7 +172,7 @@ export default function CocineroDashboard() {
       )}
 
       {/* Gráfico: insumos próximos a vencer — fila de ancho completo */}
-      <div className="row g-4 mt-1">
+      <div className="row g-4 mt-4">
         <div className="col-12">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white border-bottom py-2">
@@ -234,7 +234,7 @@ export default function CocineroDashboard() {
         </div>
       </div>
 
-      <div className="row g-4">
+      <div className="row g-4 mt-4">
         {/* Últimas preparaciones */}
         <div className="col-12 col-lg-7">
           <div className="card border-0 shadow-sm">
