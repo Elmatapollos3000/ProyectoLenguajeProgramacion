@@ -123,8 +123,8 @@ export default function AuditorDashboard() {
   }, []);
 
   // Conteos auditoría
-  const conteoAud = (accion) =>
-    auditoria.filter((a) => a.accion === accion).length;
+  //const conteoAud = (accion) =>
+  //auditoria.filter((a) => a.accion === accion).length;
 
   return (
     <Layout titulo="Dashboard Auditor">
